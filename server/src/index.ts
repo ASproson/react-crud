@@ -8,13 +8,29 @@ app.use(express.json());
 app.use(cors());
 const prisma = new PrismaClient();
 
+// curl http://localhost:5000/api/notes
 app.get("/api/notes", async (req, res) => {
   const notes = await prisma.note.findMany();
   // res.json({ message: "success!" });
   res.json(notes);
 });
 
-// curl http://localhost:5000/api/notes
+app.post("/api/notes", async (req, res) => {
+  const { title, content } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).send("Title and content fields are required");
+  }
+
+  try {
+    const note = await prisma.note.create({
+      data: { title, content },
+    });
+    res.json(note);
+  } catch (error) {
+    res.status(500).send("Oops, something went wrong on our end!");
+  }
+});
 
 app.listen(5000, () => {
   console.log(
