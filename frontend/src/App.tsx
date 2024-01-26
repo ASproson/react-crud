@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,57 +9,101 @@ interface Note {
   content: string;
 }
 
+const BASE_URL = "http://localhost:5000/api/notes";
+
 const App = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [notes, setNotes] = useState<Note[]>([
-    {
-      id: 1,
-      title: "Test note",
-      content: "Test content",
-    },
-    {
-      id: 2,
-      title: "Test note 2",
-      content: "Test content 2",
-    },
-  ]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
-  const handleAddNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newNote: Note = {
-      id: notes.length + 1,
-      title: title,
-      content: content,
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch(BASE_URL);
+        const notes: Note[] = await response.json();
+        setNotes(notes);
+      } catch (error) {
+        console.log(error);
+      }
     };
-    setNotes([...notes, newNote]);
-    resetFormFields();
-    notify(`${newNote.title} added`);
+    fetchNotes();
+  }, []);
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content,
+        }),
+      });
+      const newNote = await response.json();
+      setNotes([...notes, newNote]);
+      notify(`${newNote.title} added`);
+      resetFormFields();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleUpdateNote = (e: React.FormEvent) => {
+  const handleUpdateNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedNote) return;
-    const updatedNote: Note = {
-      id: selectedNote.id,
-      title: title,
-      content: content,
-    };
-    const updatedNotesList = notes.map((note) =>
-      note.id === selectedNote.id ? updatedNote : note
-    );
-    setNotes(updatedNotesList);
-    resetFormFields();
-    notify(`${updatedNote.title} updated`);
+
+    try {
+      const response = await fetch(BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content,
+        }),
+      });
+      const updatedNote = await response.json();
+      const updatedNotesList = notes.map((note) =>
+        note.id === selectedNote.id ? updatedNote : note
+      );
+      setNotes(updatedNotesList);
+      resetFormFields();
+      notify(`${updatedNote.title} updated`);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const deleteNote = (e: React.MouseEvent, noteId: number, title: string) => {
+  const deleteNote = async (
+    e: React.MouseEvent,
+    noteId: number,
+    title: string
+  ) => {
     e.stopPropagation();
-    const updatedNotes = notes.filter((note) => note.id !== noteId);
-    setNotes(updatedNotes);
-    resetFormFields();
-    notify(`${title} deleted`);
+
+    try {
+      await fetch(`${BASE_URL}/${noteId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content,
+        }),
+      });
+      const updatedNotes = notes.filter((note) => note.id !== noteId);
+      setNotes(updatedNotes);
+      resetFormFields();
+      notify(`${title} deleted`);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleNoteClick = (note: Note) => {
