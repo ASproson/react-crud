@@ -51,7 +51,24 @@ app.put("/api/notes/:id", async (req, res) => {
     });
     res.json(updatedNote);
   } catch (error) {
-    res.status(500).send("Oops somethign went wrong on our end");
+    res.status(500).send("Oops somethign went wrong on our end!");
+  }
+});
+
+app.delete("/api/notes/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (!id || isNaN(id)) {
+    return res.status(400).send("ID must be a valid number");
+  }
+
+  try {
+    await prisma.note.delete({
+      where: { id },
+    });
+    res.status(204).send({ message: "Note deleted successfully" });
+  } catch (error) {
+    return res.status(500).send("Oops something went wrong on our end!");
   }
 });
 
