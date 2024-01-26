@@ -32,6 +32,29 @@ app.post("/api/notes", async (req, res) => {
   }
 });
 
+app.put("/api/notes/:id", async (req, res) => {
+  const { title, content } = req.body;
+  const id = parseInt(req.params.id);
+
+  if (!title || !content) {
+    return res.status(400).send("Title and content fields are required");
+  }
+
+  if (!id || isNaN(id)) {
+    return res.status(400).send("ID must be a valid number");
+  }
+
+  try {
+    const updatedNote = await prisma.note.update({
+      where: { id },
+      data: { title, content },
+    });
+    res.json(updatedNote);
+  } catch (error) {
+    res.status(500).send("Oops somethign went wrong on our end");
+  }
+});
+
 app.listen(5000, () => {
   console.log(
     "\x1b[31m%s\x1b[0m",
